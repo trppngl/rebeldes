@@ -5,8 +5,9 @@ var tracks = {};
 var currentTrack;
 (function () {
   var trx = document.getElementsByTagName('audio');
+  var len = trx.length;
   currentTrack = trx[0];
-  for (var i = 0; i < trx.length; i += 1) {
+  for (var i = 0; i < len; i += 1) {
     tracks[trx[i].id] = trx[i];
   }
 }());
@@ -91,6 +92,7 @@ function prev() {
     startSeg(currentIndex);
   } else if (currentIndex > 0) {
     userStartSeg = true;
+    pauseAudio();
     startSeg(currentIndex - 1);
   }
 }
@@ -98,6 +100,7 @@ function prev() {
 function next() {
   if (currentIndex < numSegs - 1) {
     userStartSeg = true;
+    pauseAudio();
     startSeg(currentIndex + 1);
   }
 }
@@ -112,6 +115,7 @@ function startSeg(targetIndex) {
   // movingHighlight = true;
   currentTrack = tracks[segData[currentIndex].track];
   if (userStartSeg) {
+    console.log('changing current time to start time of seg ' + currentIndex);
     currentTrack.currentTime = segData[currentIndex].start;
     if (currentTrack.paused) {
       playAudio();
@@ -205,14 +209,26 @@ function playAudio() {
   audioTimer = window.setInterval(checkStop, 20);
 }
 
+/*
 function checkStop() {
   if (currentTrack.currentTime > segData[currentIndex].stop && (!playAll || currentIndex === numSegs - 1)) {
+    console.log(currentTrack.currentTime);
+    console.log(segData[currentIndex].stop);
+    console.log('checkStop if');
     pauseAudio();
     playAll = false;
   } else if (currentTrack.currentTime > segData[currentIndex + 1].start) {
+    console.log('checkStop else if');
     userStartSeg = false;
     hardStartSeg = false;
     startSeg(currentIndex + 1);
+  }
+}
+*/
+
+function checkStop() {
+  if (currentTrack.currentTime > segData[currentIndex].stop) {
+    pauseAudio();
   }
 }
 
@@ -284,14 +300,12 @@ function handleTextClick(e) {
     var xyz = e.target.parentElement;
     userStartSeg = true;
     hardStartSeg = true;
-    console.log(xyz, segIndexes[xyz.getAttribute('id')]);
     startSeg(segIndexes[xyz.getAttribute('id')]);
   }
   if (e.target.classList.contains('seg')) {
     var xyz = e.target;
     userStartSeg = true;
     hardStartSeg = true;
-    console.log(xyz, segIndexes[xyz.getAttribute('id')]);
     startSeg(segIndexes[xyz.getAttribute('id')]);
   } /* else if (e.target.tagName.toLowerCase() === 'span') { // Other text spans?
     currentLink = e.target;
