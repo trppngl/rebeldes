@@ -1,6 +1,18 @@
-var audio = document.getElementById('audio');
-var highlight = document.getElementById('highlight');
 var text = document.getElementById('text');
+var highlight = document.getElementById('highlight');
+
+var tracks = {};
+var currentTrack;
+(function () {
+  var trx = document.getElementsByTagName('audio');
+  currentTrack = trx[0];
+  for (var i = 0; i < trx.length; i += 1) {
+    tracks[trx[i].id] = trx[i];
+  }
+}());
+
+/* Using a self-invoking function here so that the initial list of audio elements isn't saved.
+Also, if there was a way to get the name of the audio file and lop off .mp3 or .ogg, wouldn't need to gives those elements ids in the html. */
 
 var segs = [];
 segs.push.apply(segs, document.getElementsByClassName('seg'));
@@ -10,17 +22,25 @@ segs.push.apply(segs, document.getElementsByClassName('seg'));
 var numSegs = segs.length;
 
 var segData = [];
-for (i = 0; i < numSegs; i += 1) {
+for (var i = 0; i < numSegs; i += 1) {
   var seg = segs[i];
-  var times = seg.getAttribute('data-times').split(' ');
+  // Or have track name in seg's id?
+  var audioData = seg.getAttribute('data-audio').split(' ');
   segData.push({
-    'start': Number(times[0]),
-    'stop': Number(times[1]),
-    'plain': seg.innerHTML,
-    'v': seg.getAttribute('data-v'),
-    'p': seg.getAttribute('data-p'),
-    'g': seg.getAttribute('data-g')
+    'xyz': seg.getAttribute('id'),
+    'track': audioData[0],
+    'start': Number(audioData[1]),
+    'stop': Number(audioData[2])//,
+    // 'plain': seg.innerHTML,
+    // 'v': seg.getAttribute('data-v'),
+    // 'p': seg.getAttribute('data-p'),
+    // 'g': seg.getAttribute('data-g')
   });
+}
+
+var segIndexes = {};
+for (var i = 0; i < numSegs; i += 1) {
+    segIndexes[segData[i].xyz] = i;
 }
 
 var easingMultipliers = {
@@ -66,7 +86,7 @@ var supportsMixBlendMode = window.getComputedStyle(document.body).mixBlendMode;
 
 function prev() {
   var threshold = segData[currentIndex].start + 0.2;
-  if (audio.currentTime > threshold) {
+  if (currentTrack.currentTime > threshold) {
     userStartSeg = true;
     startSeg(currentIndex);
   } else if (currentIndex > 0) {
@@ -87,12 +107,13 @@ function next() {
 function startSeg(targetIndex) {
   currentFrame = 1;
   currentIndex = targetIndex;
-  prepMoveHighlight();
-  prepScroll();
-  movingHighlight = true;
+  // prepMoveHighlight();
+  // prepScroll();
+  // movingHighlight = true;
+  currentTrack = tracks[segData[currentIndex].track];
   if (userStartSeg) {
-    audio.currentTime = segData[currentIndex].start;
-    if (audio.paused) {
+    currentTrack.currentTime = segData[currentIndex].start;
+    if (currentTrack.paused) {
       playAudio();
     }
   }
@@ -180,15 +201,15 @@ function ease(startValue, endValue) { // Break into two functions?
 //
 
 function playAudio() {
-  audio.play();
+  currentTrack.play();
   audioTimer = window.setInterval(checkStop, 20);
 }
 
 function checkStop() {
-  if (audio.currentTime > segData[currentIndex].stop && (!playAll || currentIndex === numSegs - 1)) {
+  if (currentTrack.currentTime > segData[currentIndex].stop && (!playAll || currentIndex === numSegs - 1)) {
     pauseAudio();
     playAll = false;
-  } else if (audio.currentTime > segData[currentIndex + 1].start) {
+  } else if (currentTrack.currentTime > segData[currentIndex + 1].start) {
     userStartSeg = false;
     hardStartSeg = false;
     startSeg(currentIndex + 1);
@@ -196,12 +217,12 @@ function checkStop() {
 }
 
 function pauseAudio() {
-  audio.pause();
+  currentTrack.pause();
   window.clearInterval(audioTimer);
 }
 
 function togglePlayAll() {
-  if (audio.paused) {
+  if (currentTrack.paused) {
     playAll = true;
     next();
   } else {
@@ -224,7 +245,7 @@ function toggleLinkMode(input) {
 }
 
 function writeSegs() {
-  for (i = 0; i < numSegs; i += 1) {
+  for (var i = 0; i < numSegs; i += 1) {
     if (segData[i][linkMode]) {
       segs[i].innerHTML = segData[i][linkMode];
     } else {
@@ -258,15 +279,25 @@ function showCurrentNote() {
 // Event handlers
 
 function handleTextClick(e) {
-  if (e.target.classList.contains('seg')) {
+  // DRY, come back and fix this.
+  if (e.target.parentElement.classList.contains('seg')) {
+    var xyz = e.target.parentElement;
     userStartSeg = true;
     hardStartSeg = true;
-    startSeg(Number(e.target.getAttribute('id')));
-  } else if (e.target.tagName.toLowerCase() === 'span') { // Other text spans?
+    console.log(xyz, segIndexes[xyz.getAttribute('id')]);
+    startSeg(segIndexes[xyz.getAttribute('id')]);
+  }
+  if (e.target.classList.contains('seg')) {
+    var xyz = e.target;
+    userStartSeg = true;
+    hardStartSeg = true;
+    console.log(xyz, segIndexes[xyz.getAttribute('id')]);
+    startSeg(segIndexes[xyz.getAttribute('id')]);
+  } /* else if (e.target.tagName.toLowerCase() === 'span') { // Other text spans?
     currentLink = e.target;
     toggleNote(document.getElementById(currentLink.getAttribute('data-note')));
     // Too much in above line?
-  }
+  } */
 }
 
 function handleKeydown(e) {
