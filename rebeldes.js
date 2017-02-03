@@ -20,11 +20,12 @@ for (var i = 0; i < numSegs; i += 1) {
 
 var currentIndex = -1;
 
-var nextVisibleIndex = 0; // Should this be global? Don't want to declare it every 20ms in checkStop()...
+var nextUpIndex = 0; // Should this be global? Don't want to declare it every 20ms in checkStop()...
 
 var continuous = false;
 
-playAll = false;
+var playAll = false;
+var userStartSeg;
 
 //
 
@@ -34,7 +35,7 @@ function startSeg(targetIndex) {
   // prepMoveHighlight();
   // prepScroll();
   // movingHighlight = true;
-  if (!continuous) {
+  if (userStartSeg || !continuous) {
     audio.currentTime = segData[currentIndex].start;
     if (audio.paused) {
       playAudio();
@@ -48,24 +49,30 @@ function playAudio() {
 }
 
 function checkStop() {
+  
   if (audio.currentTime > segData[currentIndex].stop) {
+    
     if (!playAll) {
       pauseAudio();
+      
     } else {
-      nextVisibleIndex = getNextVisibleIndex();
-      console.log('nextVisibleSeg = ' + nextVisibleIndex);
-      if (!nextVisibleIndex) {
+      nextUpIndex = getNextUpIndex();
+      console.log('next visible segment = ' + nextUpIndex + ' ' + segData[nextUpIndex].id);
+      
+      if (!nextUpIndex) {
         pauseAudio();
         playAll = false;
-      } else if (segData[nextVisibleIndex].id !== segData[currentIndex].id) {
-        console.log('skipping to ' + nextVisibleIndex);
+        
+      } else if (segData[nextUpIndex].id !== segData[currentIndex].id) {
+        console.log('SKIPPING to ' + nextUpIndex);
         continuous = false;
-        startSeg(nextVisibleIndex);
-      } else if (audio.currentTime > segData[nextVisibleIndex].start) {
-        console.log('continuing to ' + nextVisibleIndex);
+        startSeg(nextUpIndex);
+        
+      } else if (audio.currentTime > segData[nextUpIndex].start) {
+        console.log('continuing to ' + nextUpIndex);
         continuous = true;
         // hardStartSeg = false;
-        startSeg(nextVisibleIndex);
+        startSeg(nextUpIndex);
       }
     }
   }
@@ -75,27 +82,12 @@ function checkStop() {
 
 What should happen in that in-between time if user shows a note that wasn't visible before, so that now the next visible segment isn't adjacent in the audio? The way the function is written now, as soon as the user does that, it will start playing that new next visible seg. Is that what should happen? */
 
-/*
-
-function checkStop() {
-  if (audio.currentTime > segData[currentIndex].stop && (!playAll || currentIndex === numSegs - 1)) {
-    pauseAudio();
-    playAll = false;
-  } else if (audio.currentTime > segData[currentIndex + 1].start) {
-    userStartSeg = false;
-    hardStartSeg = false;
-    startSeg(currentIndex + 1);
-  }
-}
-
-*/
-
 function pauseAudio() {
   audio.pause();
   window.clearInterval(audioTimer);
 }
 
-function getNextVisibleIndex() {
+function getNextUpIndex() { // Index of next visible segment
   var index = currentIndex + 1;
   while (index < numSegs) {
     if (segs[index].offsetHeight) {
@@ -105,3 +97,23 @@ function getNextVisibleIndex() {
     }
   }
 }
+
+// Event handlers
+
+function handleClick(e) {
+  var targetIndex;
+  if (e.target.classList.contains('seg')) {
+    targetIndex = Number(e.target.getAttribute('id'));
+  } else if (e.target.parentElement.classList.contains('seg')) {
+    targetIndex = Number(e.target.parentElement.getAttribute('id'));
+  }
+  if (targetIndex != undefined) {
+    userStartSeg = true;
+    hardStartSeg = true;
+    startSeg(targetIndex);
+  }
+}
+
+// Event listeners
+
+document.addEventListener('click', handleClick, false);
