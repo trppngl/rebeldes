@@ -100,9 +100,16 @@ function getNextUpIndex() {
   }
 }
 
+/* Two things aren't working right with playAll():
+1) It doesn't work as the first user action
+2) It doesn't switch off when reaching the end */
+
 function togglePlayAll() {
   if (audio.paused) {
+    console.log('audio was paused');
     playAll = true;
+    console.log(playAll);
+    console.log('next()');
     next();
   } else {
     playAll = !playAll;
@@ -111,7 +118,8 @@ function togglePlayAll() {
 
 function next() {
   nextUpIndex = getNextUpIndex();
-  if (nextUpIndex) {
+  console.log('nextUpIndex = ' + nextUpIndex);
+  if (nextUpIndex !== undefined) { // If there is a next visible seg
     userStartSeg = true;
     startSeg(nextUpIndex);
   }
@@ -148,17 +156,19 @@ function handleClick(e) {
 
 function handleKeydown(e) {
   switch(e.keyCode) {
-    case 37:
-      hardStartSeg = true;
+    /* case 37:
+      // hardStartSeg = true;
       prev();
-      break;
+      break; */
     case 39:
-      hardStartSeg = true;
+      // hardStartSeg = true;
+      console.log('keydown -> next()');
       next();
       break;
     case 32:
       e.preventDefault(); // So browser doesn't jump to bottom
-      hardStartSeg = false;
+      // hardStartSeg = false;
+      console.log('keydown -> togglePlayAll()');
       togglePlayAll();
       break;
     /* case 86:
