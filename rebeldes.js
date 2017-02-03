@@ -19,14 +19,16 @@ for (var i = 0; i < numSegs; i += 1) {
 }
 
 var currentIndex = -1;
-var nextUpIndex = 0; // Should this be global? Don't want to declare it every 20ms in checkStop()...
+var nextVisibleIndex = 0;
+var prevVisibleIndex;
+// Should these be global? Don't want to declare every 20ms in checkStop(). Or would that be OK?
 
-var continuous = false;
+var skipHiddenSeg;
 
 var playAll = false;
 var userStartSeg;
 
-//
+// Audio
 
 function startSeg(targetIndex) {
   currentIndex = targetIndex;
@@ -34,7 +36,7 @@ function startSeg(targetIndex) {
   // prepMoveHighlight();
   // prepScroll();
   // movingHighlight = true;
-  if (userStartSeg || !continuous) {
+  if (userStartSeg || skipHiddenSeg) {
     audio.currentTime = segData[currentIndex].start;
     if (audio.paused) {
       playAudio();
@@ -55,47 +57,73 @@ function checkStop() {
       pauseAudio();
       
     } else {
-      nextUpIndex = getNextUpIndex();
-      console.log('next visible segment = ' + nextUpIndex);
+      nextVisibleIndex = getNextVisibleIndex();
       
-      if (nextUpIndex === undefined) {
+      if (nextVisibleIndex === undefined) {
         
         pauseAudio();
         playAll = false;
         
-      } else if (segData[nextUpIndex].id !== segData[currentIndex].id) {
-        console.log('SKIPPING to ' + nextUpIndex);
-        continuous = false;
+      } else if (segData[nextVisibleIndex].id !== segData[currentIndex].id) {
+        skipHiddenSeg = true;
         userStartSeg = false;
-        startSeg(nextUpIndex);
+        startSeg(nextVisibleIndex);
         
-      } else if (audio.currentTime > segData[nextUpIndex].start) {
-        console.log('continuing to ' + nextUpIndex);
-        continuous = true;
+      } else if (audio.currentTime > segData[nextVisibleIndex].start) {
+        skipHiddenSeg = false;
         userStartSeg = false;
         // hardStartSeg = false;
-        startSeg(nextUpIndex);
+        startSeg(nextVisibleIndex);
       }
     }
   }
 }
-
-/* This function will be called every 20ms, so don't want it to do anything unnecessary. If it gets to the end there (after current segment's stop time, playAll mode, not last visible segment, next visible segment is adjacent in the audio), it has to keep checking every 20ms to see if the audio has reached the next visible segment's start time. But until that point is reached, should it really be doing all these checks every 20ms?
-
-What should happen in that in-between time if user shows a note that wasn't visible before, so that now the next visible segment isn't adjacent in the audio? The way the function is written now, as soon as the user does that, it will start playing that new next visible seg. Is that what should happen? */
 
 function pauseAudio() {
   audio.pause();
   window.clearInterval(audioTimer);
 }
 
-function getNextUpIndex() {
+function getNextVisibleIndex() {
   var index = currentIndex + 1;
-  while (index < numSegs) {
+  while (index < numSegs) { //
     if (segs[index].offsetHeight) {
       return index;
     } else {
       index += 1;
+    }
+  }
+}
+
+function getPrevVisibleIndex() {
+  var index = currentIndex - 1;
+  while (index >= 0) { 
+    if (segs[index].offsetHeight) {
+      return index;
+    } else {
+      index -= 1;
+    }
+  }
+}
+
+function next() {
+  nextVisibleIndex = getNextVisibleIndex();
+  if (nextVisibleIndex !== undefined) {
+    userStartSeg = true;
+    startSeg(nextVisibleIndex);
+  }
+}
+
+function prev() {
+  var threshold = segData[currentIndex].start + 0.2;
+  if (audio.currentTime > threshold) {
+    userStartSeg = true;
+    startSeg(currentIndex);
+  } else {
+    prevVisibleIndex = getPrevVisibleIndex();
+    if (prevVisibleIndex !== undefined) {
+      userStartSeg = true;
+      startSeg(prevVisibleIndex);
     }
   }
 }
@@ -109,27 +137,6 @@ function togglePlayAll() {
   }
 }
 
-function next() {
-  nextUpIndex = getNextUpIndex();
-  if (nextUpIndex !== undefined) { // If there is a next visible seg
-    userStartSeg = true;
-    startSeg(nextUpIndex);
-  }
-}
-
-/*
-function prev() {
-  var threshold = segData[currentIndex].start + 0.2;
-  if (audio.currentTime > threshold) {
-    userStartSeg = true;
-    startSeg(currentIndex);
-  } else if (currentIndex > 0) {
-    userStartSeg = true;
-    startSeg(currentIndex - 1);
-  }
-}
-*/
-
 // Event handlers
 
 function handleClick(e) {
@@ -139,7 +146,7 @@ function handleClick(e) {
   } else if (e.target.parentElement.classList.contains('seg')) {
     targetIndex = Number(e.target.parentElement.getAttribute('id'));
   }
-  if (targetIndex != undefined) {
+  if (targetIndex !== undefined) {
     userStartSeg = true;
     hardStartSeg = true;
     startSeg(targetIndex);
@@ -148,10 +155,10 @@ function handleClick(e) {
 
 function handleKeydown(e) {
   switch(e.keyCode) {
-    /* case 37:
+    case 37:
       // hardStartSeg = true;
       prev();
-      break; */
+      break;
     case 39:
       // hardStartSeg = true;
       next();
