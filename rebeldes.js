@@ -66,11 +66,13 @@ function checkStop() {
       } else if (segData[nextUpIndex].id !== segData[currentIndex].id) {
         console.log('SKIPPING to ' + nextUpIndex);
         continuous = false;
+        userStartSeg = false;
         startSeg(nextUpIndex);
         
       } else if (audio.currentTime > segData[nextUpIndex].start) {
         console.log('continuing to ' + nextUpIndex);
         continuous = true;
+        userStartSeg = false;
         // hardStartSeg = false;
         startSeg(nextUpIndex);
       }
@@ -87,7 +89,7 @@ function pauseAudio() {
   window.clearInterval(audioTimer);
 }
 
-function getNextUpIndex() { // Index of next visible segment
+function getNextUpIndex() {
   var index = currentIndex + 1;
   while (index < numSegs) {
     if (segs[index].offsetHeight) {
@@ -97,6 +99,36 @@ function getNextUpIndex() { // Index of next visible segment
     }
   }
 }
+
+function togglePlayAll() {
+  if (audio.paused) {
+    playAll = true;
+    next();
+  } else {
+    playAll = !playAll;
+  }
+}
+
+function next() {
+  nextUpIndex = getNextUpIndex();
+  if (nextUpIndex) {
+    userStartSeg = true;
+    startSeg(nextUpIndex);
+  }
+}
+
+/*
+function prev() {
+  var threshold = segData[currentIndex].start + 0.2;
+  if (audio.currentTime > threshold) {
+    userStartSeg = true;
+    startSeg(currentIndex);
+  } else if (currentIndex > 0) {
+    userStartSeg = true;
+    startSeg(currentIndex - 1);
+  }
+}
+*/
 
 // Event handlers
 
@@ -114,6 +146,34 @@ function handleClick(e) {
   }
 }
 
+function handleKeydown(e) {
+  switch(e.keyCode) {
+    case 37:
+      hardStartSeg = true;
+      prev();
+      break;
+    case 39:
+      hardStartSeg = true;
+      next();
+      break;
+    case 32:
+      e.preventDefault(); // So browser doesn't jump to bottom
+      hardStartSeg = false;
+      togglePlayAll();
+      break;
+    /* case 86:
+      toggleLinkMode('v');
+      break;
+    case 80:
+      toggleLinkMode('p');
+      break;
+    case 71:
+      toggleLinkMode('g');
+      break; */
+  }
+}
+
 // Event listeners
 
 document.addEventListener('click', handleClick, false);
+window.addEventListener('keydown', handleKeydown, false);
