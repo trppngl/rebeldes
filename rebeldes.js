@@ -19,7 +19,6 @@ for (var i = 0; i < numSegs; i += 1) {
 }
 
 var currentIndex = -1;
-
 var nextUpIndex = 0; // Should this be global? Don't want to declare it every 20ms in checkStop()...
 
 var continuous = false;
@@ -51,15 +50,16 @@ function playAudio() {
 function checkStop() {
   
   if (audio.currentTime > segData[currentIndex].stop) {
-    
+
     if (!playAll) {
       pauseAudio();
       
     } else {
       nextUpIndex = getNextUpIndex();
-      console.log('next visible segment = ' + nextUpIndex + ' ' + segData[nextUpIndex].id);
+      console.log('next visible segment = ' + nextUpIndex);
       
-      if (!nextUpIndex) {
+      if (nextUpIndex === undefined) {
+        
         pauseAudio();
         playAll = false;
         
@@ -100,16 +100,9 @@ function getNextUpIndex() {
   }
 }
 
-/* Two things aren't working right with playAll():
-1) It doesn't work as the first user action
-2) It doesn't switch off when reaching the end */
-
 function togglePlayAll() {
   if (audio.paused) {
-    console.log('audio was paused');
     playAll = true;
-    console.log(playAll);
-    console.log('next()');
     next();
   } else {
     playAll = !playAll;
@@ -118,7 +111,6 @@ function togglePlayAll() {
 
 function next() {
   nextUpIndex = getNextUpIndex();
-  console.log('nextUpIndex = ' + nextUpIndex);
   if (nextUpIndex !== undefined) { // If there is a next visible seg
     userStartSeg = true;
     startSeg(nextUpIndex);
@@ -162,13 +154,11 @@ function handleKeydown(e) {
       break; */
     case 39:
       // hardStartSeg = true;
-      console.log('keydown -> next()');
       next();
       break;
     case 32:
       e.preventDefault(); // So browser doesn't jump to bottom
       // hardStartSeg = false;
-      console.log('keydown -> togglePlayAll()');
       togglePlayAll();
       break;
     /* case 86:
