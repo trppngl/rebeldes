@@ -1,5 +1,6 @@
 var column = document.getElementById('column');
 var highlight = document.getElementById('highlight');
+
 var audio = document.getElementById('audio');
 
 var segs = [];
@@ -10,23 +11,19 @@ var numSegs = segs.length;
 var segData = [];
 for (var i = 0; i < numSegs; i += 1) {
   var seg = segs[i];
-  var times = seg.getAttribute('data-times').split(' ');
+  var dataAudio = seg.getAttribute('data-audio').split(' ');
   segData.push({
-    'id': times[0],
-    'start': Number(times[1]),
-    'stop': Number(times[2])
+    'track': dataAudio[0],
+    'start': Number(dataAudio[1]),
+    'stop': Number(dataAudio[2])
   });
 }
 
 var currentIndex = -1;
-var nextVisibleIndex = 0;
-var prevVisibleIndex;
-// Should these be global? Don't want to declare every 20ms in checkStop(). Or would that be OK?
-
-var skipHiddenSeg;
 
 var playAll = false;
 var userStartSeg;
+var skipHiddenSeg;
 
 // Audio
 
@@ -50,6 +47,7 @@ function playAudio() {
 }
 
 function checkStop() {
+  var nextVisibleIndex
   
   if (audio.currentTime > segData[currentIndex].stop) {
 
@@ -60,11 +58,10 @@ function checkStop() {
       nextVisibleIndex = getNextVisibleIndex();
       
       if (nextVisibleIndex === undefined) {
-        
         pauseAudio();
         playAll = false;
         
-      } else if (segData[nextVisibleIndex].id !== segData[currentIndex].id) {
+      } else if (segData[nextVisibleIndex].track !== segData[currentIndex].track) {
         skipHiddenSeg = true;
         userStartSeg = false;
         startSeg(nextVisibleIndex);
@@ -107,7 +104,7 @@ function getPrevVisibleIndex() {
 }
 
 function next() {
-  nextVisibleIndex = getNextVisibleIndex();
+  var nextVisibleIndex = getNextVisibleIndex();
   if (nextVisibleIndex !== undefined) {
     userStartSeg = true;
     startSeg(nextVisibleIndex);
@@ -115,6 +112,7 @@ function next() {
 }
 
 function prev() {
+  var prevVisibleIndex
   var threshold = segData[currentIndex].start + 0.2;
   if (audio.currentTime > threshold) {
     userStartSeg = true;
