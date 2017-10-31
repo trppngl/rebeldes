@@ -28,7 +28,16 @@ var skipHiddenSeg;
 // Audio
 
 function startSeg(targetIndex) {
+
+  // Move highlight (taken from cotton.js)
+  if (segs[currentIndex]) {
+    segs[currentIndex].classList.remove('highlight');
+  }
+  segs[targetIndex].classList.add('highlight');
+  //
+  
   currentIndex = targetIndex;
+  
   // currentFrame = 1;
   // prepMoveHighlight();
   // prepScroll();
@@ -181,4 +190,4 @@ function handleKeydown(e) {
 // Event listeners
 
 document.addEventListener('click', handleClick, false);
-window.addEventListener('keydown', handleKeydown, false);
+document.addEventListener('keydown', handleKeydown, false);

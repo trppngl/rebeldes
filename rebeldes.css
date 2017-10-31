@@ -1,12 +1,12 @@
 /* text-color = rgba(5, 5, 5, 0.85) */
 body {
   background: #fff;
-  color: #2c2c2c;
+  color: #333 /* #2c2c2c */;
   font-family: 'Linux Libertine', serif;
   font-feature-settings: 'kern', 'liga', 'clig', 'onum' 1;
   margin: 0;
-/* background-image linear-gradient(#eee 1px, transparent 1px)
-  background-size 100% 12px */
+  /* background-image: linear-gradient(#eee 1px, transparent 1px);
+  background-size: 100% 12px; */
 }
 #column {
   max-width: 528px;
@@ -18,6 +18,9 @@ body {
 /* z-index -1 */
   mix-blend-mode: multiply;
   pointer-events: none;
+}
+.highlight {
+  background: #fffbf1;
 }
 p {
   margin: 0;
@@ -37,6 +40,9 @@ p {
 }
 .note p {
   margin: 12px 0;
+}
+.note .seg {
+  padding: 4.5px 0;
 }
 .hide {
   display: none;
