@@ -9,15 +9,22 @@ segs.push.apply(segs, document.getElementsByClassName('seg'));
 var numSegs = segs.length;
 
 var segData = [];
-for (var i = 0; i < numSegs; i += 1) {
-  var seg = segs[i];
-  var dataAudio = seg.getAttribute('data-audio').split(' ');
-  segData.push({
-    'track': dataAudio[0],
-    'start': Number(dataAudio[1]),
-    'stop': Number(dataAudio[2])
-  });
-}
+
+(function () {
+  
+  var seg;
+  var audioData;
+  
+  for (var i = 0; i < numSegs; i += 1) {
+    seg = segs[i];
+    audioData = seg.getAttribute('data-audio').split(' ');
+    segData.push({
+      'sprite': audioData[0],
+      'start': Number(audioData[1]),
+      'stop': Number(audioData[2])
+    });
+  }
+})();
 
 var currentIndex = -1;
 
@@ -25,23 +32,27 @@ var playAll = false;
 var userStartSeg;
 var skipHiddenSeg;
 
-// Audio
+// Highlight
 
-function startSeg(targetIndex) {
-
-  // Move highlight (taken from cotton.js)
+function moveHighlight(targetIndex) {
   if (segs[currentIndex]) {
     segs[currentIndex].classList.remove('highlight');
   }
   segs[targetIndex].classList.add('highlight');
-  //
+}
+
+// Audio
+
+function startSeg(targetIndex) {
   
+  moveHighlight(targetIndex);
   currentIndex = targetIndex;
   
   // currentFrame = 1;
   // prepMoveHighlight();
   // prepScroll();
   // movingHighlight = true;
+  
   if (userStartSeg || skipHiddenSeg) {
     audio.currentTime = segData[currentIndex].start;
     if (audio.paused) {
@@ -52,11 +63,11 @@ function startSeg(targetIndex) {
 
 function playAudio() {
   audio.play();
-  audioTimer = window.setInterval(checkStop, 20);
+  audioTimer = window.setInterval(checkStop, 20); // Declare var audioTimer at top?
 }
 
 function checkStop() {
-  var nextVisibleIndex
+  var nextVisibleIndex;
   
   if (audio.currentTime > segData[currentIndex].stop) {
 
@@ -70,7 +81,7 @@ function checkStop() {
         pauseAudio();
         playAll = false;
         
-      } else if (segData[nextVisibleIndex].track !== segData[currentIndex].track) {
+      } else if (segData[nextVisibleIndex].sprite !== segData[currentIndex].sprite) {
         skipHiddenSeg = true;
         userStartSeg = false;
         startSeg(nextVisibleIndex);
@@ -91,23 +102,23 @@ function pauseAudio() {
 }
 
 function getNextVisibleIndex() {
-  var index = currentIndex + 1;
-  while (index < numSegs) { //
-    if (segs[index].offsetHeight) {
-      return index;
+  var ndx = currentIndex + 1;
+  while (ndx < numSegs) { //
+    if (segs[ndx].offsetHeight) {
+      return ndx;
     } else {
-      index += 1;
+      ndx += 1;
     }
   }
 }
 
 function getPrevVisibleIndex() {
-  var index = currentIndex - 1;
-  while (index >= 0) { 
-    if (segs[index].offsetHeight) {
-      return index;
+  var ndx = currentIndex - 1;
+  while (ndx >= 0) { 
+    if (segs[ndx].offsetHeight) {
+      return ndx;
     } else {
-      index -= 1;
+      ndx -= 1;
     }
   }
 }
@@ -121,7 +132,7 @@ function next() {
 }
 
 function prev() {
-  var prevVisibleIndex
+  var prevVisibleIndex;
   var threshold = segData[currentIndex].start + 0.2;
   if (audio.currentTime > threshold) {
     userStartSeg = true;
